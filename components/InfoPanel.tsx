@@ -43,7 +43,27 @@ const InfoPanel: React.FC = () => {
                 </ol>
             </div>
             
-            <div className="bg-stone-50 p-3 rounded-md border border-stone-200">
+            <div className="bg-blue-50 p-4 rounded-md border border-blue-200 mt-6">
+                <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 19l-1 1-1-1-1 1-1-1-1 1-1-1-5.657-5.657a6 6 0 117.757-7.757 2 2 0 002-2 2 2 0 00-2-2 2 2 0 00-2 2" />
+                    </svg>
+                    Getting Your API Key (Required)
+                </h3>
+                <p className="text-blue-800 mb-3 text-sm">To keep this tool powerful and accessible, you bring your own AI key. It's quick and free for standard use!</p>
+                <ol className="list-decimal list-inside space-y-2 text-blue-900 text-sm mb-4">
+                    <li>Visit <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-blue-700 underline font-bold hover:text-blue-600 transition-colors">Google AI Studio API Keys</a>.</li>
+                    <li>Sign in with your Google account.</li>
+                    <li>Click the blue <strong>"Create API key"</strong> button.</li>
+                    <li>Copy the newly generated key (it starts with <code>AIza...</code>).</li>
+                    <li>Click Generate in our application and paste your key when the screen pops up!</li>
+                </ol>
+                <div className="bg-white/60 p-3 rounded text-blue-800 text-xs border border-blue-100">
+                    <p><strong>🔒 Privacy First:</strong> Your key is only stored locally in your browser's session. It's never saved on our servers.</p>
+                </div>
+            </div>
+
+            <div className="bg-stone-50 p-4 rounded-md border border-stone-200 mt-4">
                 <h3 className="font-semibold text-stone-800 mb-2 flex items-center gap-2">
                     Model Modes & Cost
                 </h3>

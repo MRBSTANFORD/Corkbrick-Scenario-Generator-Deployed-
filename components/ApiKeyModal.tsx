@@ -45,7 +45,7 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onConfirm })
           <div className="space-y-3">
             <h3 className="font-bold text-stone-800 text-sm uppercase tracking-wider">Step 1: Get your free key</h3>
             <p className="text-sm text-stone-600 leading-relaxed">
-              To keep this app free for everyone, each user provides their own key. Generating images with <strong>Gemini 2.5 Flash</strong> is usually free of charge for hobbyist use.
+              To keep this app flexible for everyone, each user provides their own key. Generating images with <strong>Gemini 2.5 Flash</strong> is usually free of charge for hobbyist use.
             </p>
             <a 
               href="https://aistudio.google.com/app/apikey" 
@@ -58,6 +58,11 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onConfirm })
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
             </a>
+            <div className="text-xs text-stone-500 pl-2 border-l-2 border-stone-200 space-y-1 mt-2">
+              <p>1. Sign in with your Google account</p>
+              <p>2. Click the <strong>Create API Key</strong> button</p>
+              <p>3. Copy the required key (starts with <code>AIza...</code>)</p>
+            </div>
           </div>
 
           <div className="space-y-3">
