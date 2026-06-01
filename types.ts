@@ -51,20 +51,3 @@ export interface PromptCategory {
 export type SamplePromptsData = PromptCategory[];
 
 export type ModelMode = 'standard' | 'advanced';
-
-// Fix: Resolved issues with global type declarations for `window.aistudio`.
-// By defining the `AIStudio` interface inside `declare global`, it becomes a true global type.
-// This approach prevents TypeScript from creating conflicting type definitions across different modules,
-// resolving errors like "subsequent property declarations must have the same type".
-declare global {
-  interface AIStudio {
-    hasSelectedApiKey: () => Promise<boolean>;
-    openSelectKey: () => Promise<void>;
-  }
-
-  interface Window {
-    // FIX: Removed `readonly` modifier to resolve conflict with other declarations.
-    // Made optional (?) because it is not present in standard web browsers.
-    aistudio?: AIStudio;
-  }
-}

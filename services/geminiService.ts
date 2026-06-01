@@ -1,16 +1,6 @@
 
-import { GoogleGenAI, Modality } from "@google/genai";
 import { VEO_MODEL_NAME, DEFAULT_VIDEO_PROMPT } from '../constants';
 import type { ImageFile } from '../types';
-
-const fileToGenerativePart = (base64Data: string, mimeType: string) => {
-  return {
-    inlineData: {
-      data: base64Data.split(',')[1],
-      mimeType
-    },
-  };
-};
 
 export const editImageWithPrompt = async (
   images: ImageFile[],
@@ -19,45 +9,23 @@ export const editImageWithPrompt = async (
   modelName: string,
   userApiKey?: string
 ): Promise<string> => {
-  try {
-    // Only use the user's provided key
-    const apiKey = userApiKey;
-    if (!apiKey) throw new Error("Missing API Key. Please enter your Google Gemini API Key.");
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (userApiKey) headers['Authorization'] = `Bearer ${userApiKey}`;
 
-    const ai = new GoogleGenAI({ apiKey });
-    const imageParts = images.map(image => fileToGenerativePart(image.dataUrl, image.mimeType));
-    
-    // Combine prompts.
-    const fullPrompt = `${systemPrompt}\n\n---\n\nUser prompt: "${prompt}"`;
-    const textPart = { text: fullPrompt };
+  const response = await fetch('/api/gemini/edit-image', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ images, prompt, systemPrompt, modelName }),
+  });
 
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents: {
-        parts: [...imageParts, textPart],
-      },
-      config: {
-        responseModalities: [Modality.IMAGE],
-      },
-    });
-    
-    // Extract the image from the response
-    for (const part of response.candidates[0].content.parts) {
-      if (part.inlineData) {
-        const base64ImageBytes: string = part.inlineData.data;
-        return `data:${part.inlineData.mimeType};base64,${base64ImageBytes}`;
-      }
-    }
-
-    throw new Error("No image was generated in the response.");
-
-  } catch (error) {
-    console.error("Error editing image with Gemini:", error);
-    if (error instanceof Error) {
-        return Promise.reject(new Error(`Failed to generate image: ${error.message}`));
-    }
-    return Promise.reject(new Error("An unknown error occurred during image generation."));
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to edit image');
   }
+
+  const data = await response.json();
+  if (data.generatedImageBase64) return data.generatedImageBase64;
+  throw new Error("No image was generated in the response.");
 };
 
 export const generateImageDescription = async (
@@ -68,25 +36,20 @@ export const generateImageDescription = async (
   userApiKey?: string
 ): Promise<string> => {
   try {
-    const apiKey = userApiKey;
-    if (!apiKey) return ""; // Fail silently for description if no key
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (userApiKey) headers['Authorization'] = `Bearer ${userApiKey}`;
 
-    const ai = new GoogleGenAI({ apiKey });
-    const imagePart = fileToGenerativePart(editedImageBase64, mimeType);
-    const textPart = {
-        text: `You are a creative marketing assistant for 'Corkbrick', a modular furniture brand.
-        A user provided this prompt: "${userPrompt}".
-        Based on the user's prompt and the image provided, write a short, powerful, and inspiring marketing description for the resulting scene.
-        Focus on the versatility and appeal of the Corkbrick solution in this new environment. The description should be 1-2 sentences long.`
-    };
-    const response = await ai.models.generateContent({
-        model: textModelName,
-        contents: { parts: [imagePart, textPart] },
+    const response = await fetch('/api/gemini/generate-description', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ editedImageBase64, mimeType, userPrompt, textModelName }),
     });
-    return response.text.trim();
+
+    if (!response.ok) return "";
+    const data = await response.json();
+    return data.description || "";
   } catch (error) {
       console.error("Error generating image description:", error);
-      // Return empty string on failure so the main feature isn't blocked
       return "";
   }
 };
@@ -97,35 +60,33 @@ export const generateFilenameFromDescription = async (
   userApiKey?: string
 ): Promise<string> => {
   try {
-    const apiKey = userApiKey;
-    if (!apiKey) return "corkbrick-scenario";
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (userApiKey) headers['Authorization'] = `Bearer ${userApiKey}`;
 
-    const ai = new GoogleGenAI({ apiKey });
-    const textPart = {
-        text: `You are a file naming assistant.
-        Based on the following description of an image, create a short, descriptive, file-safe filename.
-        The filename should be in kebab-case (e.g., 'modern-living-room-beach-view') and be no more than 5-6 words long.
-        Do not include any file extension.
-        
-        Description: "${description}"`
-    };
-    const response = await ai.models.generateContent({
-        model: textModelName,
-        contents: { parts: [textPart] },
+    const response = await fetch('/api/gemini/generate-filename', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ description, textModelName }),
     });
-    // Clean up the response to ensure it's a valid filename
-    return response.text
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '') // remove special characters except spaces and hyphens
-      .replace(/\s+/g, '-') // replace spaces with hyphens
-      .replace(/-+/g, '-'); // replace multiple hyphens with a single one
+
+    if (!response.ok) return "corkbrick-scenario";
+    const data = await response.json();
+    return data.filename || "corkbrick-scenario";
   } catch (error) {
       console.error("Error generating filename:", error);
-      // Return a default generic name on failure
       return "corkbrick-generated-image";
   }
 };
+
+const REASSURING_MESSAGES = [
+  "Initializing cinematic rendering...",
+  "Analyzing scene depth and perspective...",
+  "Applying lighting and shadows...",
+  "Generating smooth camera movement...",
+  "Adding cinematic textures...",
+  "Encoding final high-resolution video...",
+  "Almost there, finishing touches applied..."
+];
 
 export const generateVideoFromImage = async (
   base64ImageData: string,
@@ -133,47 +94,71 @@ export const generateVideoFromImage = async (
   updateStatus: (status: string) => void,
   userApiKey?: string
 ): Promise<Blob> => {
-  
-  const apiKey = userApiKey;
-  if (!apiKey) throw new Error("Missing API Key for video generation.");
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (userApiKey) headers['Authorization'] = `Bearer ${userApiKey}`;
 
-  const ai = new GoogleGenAI({ apiKey });
+  updateStatus(REASSURING_MESSAGES[0]);
 
-  const imagePart = {
-    imageBytes: base64ImageData.split(',')[1],
-    mimeType: mimeType,
-  };
-
-  updateStatus("Initializing video generation...");
-  let operation = await ai.models.generateVideos({
-    model: VEO_MODEL_NAME,
-    prompt: DEFAULT_VIDEO_PROMPT,
-    image: imagePart,
-    config: {
-      numberOfVideos: 1,
-      resolution: '720p',
-      aspectRatio: '16:9'
-    }
+  // Start Generation
+  const startRes = await fetch('/api/gemini/generate-video', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ 
+      base64ImageData, 
+      mimeType, 
+      modelName: VEO_MODEL_NAME, 
+      prompt: DEFAULT_VIDEO_PROMPT 
+    }),
   });
 
-  updateStatus("Generating video... This may take a few minutes.");
-  while (!operation.done) {
-    await new Promise(resolve => setTimeout(resolve, 5000)); // Poll every 5 seconds
-    operation = await ai.operations.getVideosOperation({ operation: operation });
-  }
-  
-  const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-  if (!downloadLink) {
-    throw new Error("Video generation completed, but no download link was found.");
+  if (!startRes.ok) {
+    const err = await startRes.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to start video generation");
   }
 
-  updateStatus("Downloading video...");
-  // The response.body contains the MP4 bytes. You must append an API key when fetching from the download link.
-  const response = await fetch(`${downloadLink}&key=${apiKey}`);
-  if (!response.ok) {
-    throw new Error(`Failed to download video file. Status: ${response.statusText}`);
+  const { operationName } = await startRes.json();
+  if (!operationName) throw new Error("No operation started.");
+
+  let messageIndex = 1;
+  let startTime = Date.now();
+  let done = false;
+
+  // Poll
+  while (!done) {
+    const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+    if (elapsedSeconds % 15 === 0 && messageIndex < REASSURING_MESSAGES.length) {
+      updateStatus(REASSURING_MESSAGES[messageIndex]);
+      messageIndex++;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 8000));
+    
+    const pollRes = await fetch('/api/gemini/video-status', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ operationName }),
+    });
+
+    if (!pollRes.ok) {
+        throw new Error("Failed to poll video generation status.");
+    }
+    const data = await pollRes.json();
+    done = data.done;
+  }
+
+  updateStatus("Downloading high-quality video...");
+
+  // Download
+  const dlRes = await fetch('/api/gemini/video-download', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ operationName }),
+  });
+
+  if (!dlRes.ok) {
+    throw new Error('Failed to download video file.');
   }
 
   updateStatus("Done.");
-  return await response.blob();
+  return await dlRes.blob();
 };

@@ -184,15 +184,9 @@ function App() {
 
     const currentConfig = MODEL_MODES[modelMode];
     const activeKey = forceUseKey || userApiKey;
-    
-    // Check if we have an internal key from AI Studio
-    let hasInternalKey = false;
-    if (window.aistudio) {
-        hasInternalKey = await window.aistudio.hasSelectedApiKey();
-    }
 
-    // STRICT CHECK: If no manual key AND no internal key, stop and ask.
-    if (!activeKey && !hasInternalKey) {
+    // STRICT CHECK: If no manual key, stop and ask.
+    if (!activeKey) {
         setPendingAction('image');
         setIsApiKeyModalOpen(true);
         return;
@@ -262,13 +256,8 @@ function App() {
     }
     
     const activeKey = forceUseKey || userApiKey;
-    
-    let hasInternalKey = false;
-    if (window.aistudio) {
-        hasInternalKey = await window.aistudio.hasSelectedApiKey();
-    }
 
-    if (!activeKey && !hasInternalKey) {
+    if (!activeKey) {
         setPendingAction('video');
         setIsApiKeyModalOpen(true);
         return;

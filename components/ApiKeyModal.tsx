@@ -9,30 +9,12 @@ interface ApiKeyModalProps {
 
 const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onConfirm }) => {
   const [manualKey, setManualKey] = useState('');
-  const [isAIStudioEnvironment, setIsAIStudioEnvironment] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.aistudio) {
-        setIsAIStudioEnvironment(true);
-    }
-  }, []);
 
   if (!isOpen) return null;
 
   const handleManualSubmit = () => {
     if (manualKey.trim()) {
         onConfirm(manualKey.trim());
-    }
-  };
-
-  const handleAutoSelect = async () => {
-    try {
-        if (window.aistudio) {
-            await window.aistudio.openSelectKey();
-            onConfirm(''); 
-        }
-    } catch (e) {
-        console.error("Failed to select key automatically", e);
     }
   };
 
@@ -112,15 +94,6 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onConfirm })
             Cancel
           </button>
           
-          {isAIStudioEnvironment && (
-              <button
-                onClick={handleAutoSelect}
-                className="px-6 py-3 bg-stone-200 text-stone-700 rounded-xl font-bold text-sm hover:bg-stone-300 transition-colors order-3 sm:order-2"
-              >
-                Auto-Select Key
-              </button>
-          )}
-
           <button
             onClick={handleManualSubmit}
             disabled={!manualKey.trim()}
