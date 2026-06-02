@@ -57,7 +57,13 @@ app.post('/api/gemini/edit-image', async (req, res) => {
     throw new Error('No image was generated in the response.');
   } catch (error: any) {
     console.error('Error in edit-image:', error);
-    res.status(500).json({ error: error.message });
+    let msg = error.message || "An unknown error occurred";
+    if (msg.includes("429") || msg.includes("Quota exceeded") || msg.includes("RESOURCE_EXHAUSTED")) {
+      msg = "You have reached the temporary rate limit for the free tier. Please wait a minute and try again, or use a Google Cloud API key with billing enabled.";
+    } else if (msg.includes("403") || msg.includes("API key not valid")) {
+      msg = "Your API key is invalid or does not have permissions to access this model.";
+    }
+    res.status(500).json({ error: msg });
   }
 });
 
@@ -83,7 +89,11 @@ app.post('/api/gemini/generate-description', async (req, res) => {
     res.json({ description: response.text?.trim() || '' });
   } catch (error: any) {
     console.error('Error in generate-description:', error);
-    res.status(500).json({ error: error.message });
+    let msg = error.message || "An error occurred";
+    if (msg.includes("429") || msg.includes("Quota exceeded") || msg.includes("RESOURCE_EXHAUSTED")) {
+      msg = "Rate limit reached. Please wait a minute.";
+    }
+    res.status(500).json({ error: msg });
   }
 });
 
@@ -117,7 +127,11 @@ app.post('/api/gemini/generate-filename', async (req, res) => {
     res.json({ filename: filename || 'corkbrick-scenario' });
   } catch (error: any) {
     console.error('Error in generate-filename:', error);
-    res.status(500).json({ error: error.message });
+    let msg = error.message || "An error occurred";
+    if (msg.includes("429") || msg.includes("Quota exceeded") || msg.includes("RESOURCE_EXHAUSTED")) {
+      msg = "Rate limit reached. Please wait a minute.";
+    }
+    res.status(500).json({ error: msg });
   }
 });
 
