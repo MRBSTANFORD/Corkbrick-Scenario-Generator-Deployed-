@@ -63,6 +63,7 @@ function App() {
   const [generatedFilename, setGeneratedFilename] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<string>('');
   const [systemPrompt, setSystemPrompt] = useState<string>(DEFAULT_SYSTEM_PROMPT);
+  const [aiProvider, setAiProvider] = useState<'google' | 'huggingface'>('google');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -206,7 +207,8 @@ function App() {
           prompt, 
           systemPrompt,
           currentConfig.imageModel,
-          activeKey
+          activeKey,
+          aiProvider
       );
       setEditedImage(editedImageResult);
 
@@ -217,13 +219,14 @@ function App() {
             mimeType, 
             prompt,
             currentConfig.textModel,
-            activeKey
+            activeKey,
+            aiProvider
         );
         setDescription(descriptionResult);
 
         if (descriptionResult) {
             try {
-                const filenameResult = await generateFilenameFromDescription(descriptionResult, currentConfig.textModel, activeKey);
+                const filenameResult = await generateFilenameFromDescription(descriptionResult, currentConfig.textModel, activeKey, aiProvider);
                 setGeneratedFilename(filenameResult);
             } catch (fileNameError) {
                 console.warn("Could not generate filename:", fileNameError);
@@ -237,7 +240,7 @@ function App() {
 
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred.";
-      if (errorMessage.includes("API Key") || errorMessage.includes("403")) {
+      if (errorMessage.includes("API Key") || errorMessage.includes("403") || errorMessage.includes("token")) {
          setError("API Key validation failed. Please provide a valid key.");
          setPendingAction('image');
          setIsApiKeyModalOpen(true);
@@ -247,7 +250,7 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [originalImages, prompt, systemPrompt, modelMode, userApiKey]);
+  }, [originalImages, prompt, systemPrompt, modelMode, userApiKey, aiProvider]);
 
   const handleGenerateVideo = useCallback(async (forceUseKey?: string) => {
     if (!editedImage) {
@@ -569,6 +572,8 @@ function App() {
                     setSystemPrompt={setSystemPrompt} 
                     isLoading={isLoading} 
                     currentModelName={MODEL_MODES[modelMode].imageModel}
+                    aiProvider={aiProvider}
+                    setAiProvider={setAiProvider}
                 />
                 <SavedScenarios scenarios={savedScenarios} onLoad={handleLoadScenario} onEdit={handleEditScenario} onDelete={handleDeleteScenario} onLoadFromFile={handleLoadScenariosFromFile} />
             </div>
@@ -599,6 +604,7 @@ function App() {
         isOpen={isApiKeyModalOpen}
         onClose={() => setIsApiKeyModalOpen(false)}
         onConfirm={handleKeyConfirmed}
+        aiProvider={aiProvider}
       />
       {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
        <style>{`

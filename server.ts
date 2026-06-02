@@ -36,9 +36,35 @@ function fileToGenerativePart(base64Data: string, mimeType: string) {
 // Edit Image
 app.post('/api/gemini/edit-image', async (req, res) => {
   try {
-    const ai = getGenAIClient(req);
-    const { images, prompt, systemPrompt, modelName } = req.body;
+    const { images, prompt, systemPrompt, modelName, aiProvider } = req.body;
     
+    if (aiProvider === 'huggingface') {
+      const hfToken = req.headers.authorization?.split('Bearer ')[1];
+      if (!hfToken) throw new Error("Hugging Face API token is required. Please check your key.");
+      
+      const hfModel = "stabilityai/stable-diffusion-3.5-large";
+      const hfPrompt = `${systemPrompt} | Scene to generate: ${prompt}`;
+      
+      const hfResponse = await fetch(`https://api-inference.huggingface.co/models/${hfModel}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${hfToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ inputs: hfPrompt }),
+      });
+      
+      if (!hfResponse.ok) {
+        const errJson = await hfResponse.json().catch(() => ({}));
+        throw new Error(errJson.error || "Hugging Face model error or model is still loading. Try again.");
+      }
+      
+      const arrayBuffer = await hfResponse.arrayBuffer();
+      const base64Data = Buffer.from(arrayBuffer).toString('base64');
+      return res.json({ generatedImageBase64: `data:image/jpeg;base64,${base64Data}` });
+    }
+
+    const ai = getGenAIClient(req);
     const imageParts = images.map((image: any) => fileToGenerativePart(image.dataUrl, image.mimeType));
     const fullPrompt = `${systemPrompt}\n\n---\n\nUser prompt: "${prompt}"`;
     const textPart = { text: fullPrompt };
@@ -70,8 +96,11 @@ app.post('/api/gemini/edit-image', async (req, res) => {
 // Generate Description
 app.post('/api/gemini/generate-description', async (req, res) => {
   try {
+    const { editedImageBase64, mimeType, userPrompt, textModelName, aiProvider } = req.body;
+    if (aiProvider === 'huggingface') {
+       return res.json({ description: `(Hugging Face) ${userPrompt}` });
+    }
     const ai = getGenAIClient(req);
-    const { editedImageBase64, mimeType, userPrompt, textModelName } = req.body;
     
     const imagePart = fileToGenerativePart(editedImageBase64, mimeType);
     const textPart = {
@@ -100,8 +129,11 @@ app.post('/api/gemini/generate-description', async (req, res) => {
 // Generate Filename
 app.post('/api/gemini/generate-filename', async (req, res) => {
   try {
+    const { description, textModelName, aiProvider } = req.body;
+    if (aiProvider === 'huggingface') {
+       return res.json({ filename: `corkbrick-scenario-${Date.now()}` });
+    }
     const ai = getGenAIClient(req);
-    const { description, textModelName } = req.body;
 
     const textPart = {
       text: `You are a file naming assistant.

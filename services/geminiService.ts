@@ -7,7 +7,8 @@ export const editImageWithPrompt = async (
   prompt: string,
   systemPrompt: string,
   modelName: string,
-  userApiKey?: string
+  userApiKey?: string,
+  aiProvider: 'google' | 'huggingface' = 'google'
 ): Promise<string> => {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (userApiKey) headers['Authorization'] = `Bearer ${userApiKey}`;
@@ -15,7 +16,7 @@ export const editImageWithPrompt = async (
   const response = await fetch('/api/gemini/edit-image', {
     method: 'POST',
     headers,
-    body: JSON.stringify({ images, prompt, systemPrompt, modelName }),
+    body: JSON.stringify({ images, prompt, systemPrompt, modelName, aiProvider }),
   });
 
   if (!response.ok) {
@@ -33,7 +34,8 @@ export const generateImageDescription = async (
   mimeType: string,
   userPrompt: string,
   textModelName: string,
-  userApiKey?: string
+  userApiKey?: string,
+  aiProvider: 'google' | 'huggingface' = 'google'
 ): Promise<string> => {
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -42,7 +44,7 @@ export const generateImageDescription = async (
     const response = await fetch('/api/gemini/generate-description', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ editedImageBase64, mimeType, userPrompt, textModelName }),
+      body: JSON.stringify({ editedImageBase64, mimeType, userPrompt, textModelName, aiProvider }),
     });
 
     if (!response.ok) return "";
@@ -57,7 +59,8 @@ export const generateImageDescription = async (
 export const generateFilenameFromDescription = async (
   description: string,
   textModelName: string,
-  userApiKey?: string
+  userApiKey?: string,
+  aiProvider: 'google' | 'huggingface' = 'google'
 ): Promise<string> => {
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -66,7 +69,7 @@ export const generateFilenameFromDescription = async (
     const response = await fetch('/api/gemini/generate-filename', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ description, textModelName }),
+      body: JSON.stringify({ description, textModelName, aiProvider }),
     });
 
     if (!response.ok) return "corkbrick-scenario";
