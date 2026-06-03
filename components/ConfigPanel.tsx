@@ -1,13 +1,15 @@
 
 import React, { useState, useRef } from 'react';
+import { PROVIDERS } from '../constants';
+import { ProviderKey } from '../types';
 
 interface ConfigPanelProps {
   systemPrompt: string;
   setSystemPrompt: (prompt: string) => void;
   isLoading: boolean;
   currentModelName: string;
-  aiProvider: 'google' | 'huggingface';
-  setAiProvider: (provider: 'google' | 'huggingface') => void;
+  aiProvider: ProviderKey;
+  setAiProvider: (provider: ProviderKey) => void;
 }
 
 const ConfigPanel: React.FC<ConfigPanelProps> = ({ 
@@ -92,56 +94,41 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
                 AI Platform Selection
             </h3>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
+              {(Object.entries(PROVIDERS) as [ProviderKey, typeof PROVIDERS[ProviderKey]][]).map(([key, provider]) => (
                 <button
-                    onClick={() => setAiProvider('google')}
-                    className={`p-3 text-left border rounded-lg transition-all ${
-                        aiProvider === 'google' 
-                            ? 'border-amber-500 bg-amber-50 ring-1 ring-amber-500' 
-                            : 'border-stone-200 hover:border-stone-300 bg-white'
-                    }`}
+                  key={key}
+                  onClick={() => setAiProvider(key as ProviderKey)}
+                  className={`p-3 text-left border rounded-lg transition-all relative group ${
+                      aiProvider === key 
+                          ? 'border-amber-500 bg-amber-50 ring-1 ring-amber-500' 
+                          : 'border-stone-200 hover:border-stone-300 bg-white'
+                  }`}
                 >
-                    <div className="flex items-center gap-2 mb-1">
-                        <div className={`w-3 h-3 rounded-full ${aiProvider === 'google' ? 'bg-amber-500' : 'bg-stone-300'}`}></div>
-                        <span className="font-bold text-stone-800 text-sm">Google AI (Gemini)</span>
-                    </div>
-                    <p className="text-xs text-stone-500 ml-5">Default, stable performance with free tier limits.</p>
+                  <div className="flex items-center gap-2 mb-1">
+                      <div className={`w-3 h-3 rounded-full ${aiProvider === key ? 'bg-amber-500' : 'bg-stone-300'}`}></div>
+                      <span className="font-bold text-stone-800 text-sm flex items-center gap-1.5">
+                        {provider.name}
+                        <div className="relative inline-flex items-center justify-center w-4 h-4 rounded-full bg-stone-200 text-stone-500 text-[10px] font-bold cursor-help" title={provider.description}>
+                          ?
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-stone-800 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none z-10 font-normal">
+                             {provider.description}
+                          </div>
+                        </div>
+                      </span>
+                      {!provider.requiresKey && <span className="text-[10px] bg-green-200 text-green-800 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ml-auto">No Setup</span>}
+                  </div>
+                  <p className="text-xs text-stone-500 ml-5">{provider.models.image} / {provider.models.text}</p>
                 </button>
-
-                <button
-                    onClick={() => setAiProvider('huggingface')}
-                    className={`p-3 text-left border rounded-lg transition-all ${
-                        aiProvider === 'huggingface' 
-                            ? 'border-amber-500 bg-amber-50 ring-1 ring-amber-500' 
-                            : 'border-stone-200 hover:border-stone-300 bg-white'
-                    }`}
-                >
-                    <div className="flex items-center gap-2 mb-1">
-                        <div className={`w-3 h-3 rounded-full ${aiProvider === 'huggingface' ? 'bg-amber-500' : 'bg-stone-300'}`}></div>
-                        <span className="font-bold text-stone-800 text-sm">Hugging Face (Meta / OSS)</span>
-                        <span className="text-[10px] bg-stone-200 text-stone-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ml-auto">Beta</span>
-                    </div>
-                    <p className="text-xs text-stone-500 ml-5">Use open-source models like Llama. Free community limits.</p>
-                </button>
+              ))}
             </div>
-            
-            {aiProvider === 'huggingface' && (
-                <div className="mt-3 text-xs text-amber-800 bg-amber-50 p-3 rounded border border-amber-200 flex gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>
-                        <strong>Note:</strong> Hugging Face integration is currently in Beta. You will need a standard Hugging Face Access Token. Rate limits may apply using community inference endpoints.
-                    </span>
-                </div>
-            )}
             
             <div className="mt-4 pt-4 border-t border-stone-200">
                 <label className="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">
-                  Active Model Name
+                  Active Model
                 </label>
                 <div className="text-sm bg-white px-3 py-2 border border-stone-200 rounded text-stone-700 font-mono inline-block">
-                  {aiProvider === 'google' ? currentModelName : 'stabilityai/stable-diffusion-xl-refiner-1.0'}
+                  {currentModelName}
                 </div>
             </div>
           </div>

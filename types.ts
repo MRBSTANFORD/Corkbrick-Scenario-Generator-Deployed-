@@ -50,4 +50,4 @@ export interface PromptCategory {
 
 export type SamplePromptsData = PromptCategory[];
 
-export type ModelMode = 'standard' | 'advanced';
+export type ProviderKey = 'huggingface' | 'google' | 'llm7';

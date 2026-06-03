@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
+import { ProviderKey } from '../types';
+import { PROVIDERS } from '../constants';
 
 interface ApiKeyModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (key: string) => void;
-  aiProvider: 'google' | 'huggingface';
+  aiProvider: ProviderKey;
 }
 
 const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onConfirm, aiProvider }) => {
@@ -24,7 +26,7 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onConfirm, a
     }
   };
 
-  const isGoogle = aiProvider === 'google';
+  const provider = PROVIDERS[aiProvider] || PROVIDERS.google;
 
   return (
     <div 
@@ -37,13 +39,13 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onConfirm, a
       >
         <div className="bg-stone-900 p-6 text-white">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${isGoogle ? 'bg-amber-500' : 'bg-stone-100'}`}>
+            <div className={`p-2 rounded-lg bg-amber-500`}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-stone-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 19l-1 1-1-1-1 1-1-1-1 1-1-1-5.657-5.657a6 6 0 117.757-7.757 2 2 0 002-2 2 2 0 00-2-2 2 2 0 00-2 2" />
               </svg>
             </div>
             <div>
-              <h2 className="text-xl font-bold">{isGoogle ? 'Google Gemini API Key' : 'Hugging Face Access Token'}</h2>
+              <h2 className="text-xl font-bold">{provider.name} Key Needed</h2>
               <p className="text-stone-400 text-xs">Unlock AI features in your browser.</p>
             </div>
           </div>
@@ -53,48 +55,20 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onConfirm, a
           <div className="space-y-3">
             <h3 className="font-bold text-stone-800 text-sm uppercase tracking-wider">Step 1: Get your free key</h3>
             <p className="text-sm text-stone-600 leading-relaxed">
-              To keep this app flexible for everyone, each user provides their own key. generating content with <strong>{isGoogle ? 'Gemini 2.5 Flash' : 'Hugging Face Models'}</strong> is usually free of charge for community use.
+              To keep this app flexible for everyone, each user provides their own key.
             </p>
             
-            {isGoogle ? (
-                <>
-                    <a 
-                    href="https://aistudio.google.com/app/apikey" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-3 rounded-xl font-bold text-sm hover:bg-blue-100 transition-colors border border-blue-200 w-full justify-center"
-                    >
-                    Get Free Key from Google AI Studio
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                    </a>
-                    <div className="text-xs text-stone-500 pl-2 border-l-2 border-stone-200 space-y-1 mt-2">
-                    <p>1. Sign in with your Google account</p>
-                    <p>2. Click the <strong>Create API Key</strong> button</p>
-                    <p>3. Copy the required key (starts with <code>AIza...</code>)</p>
-                    </div>
-                </>
-            ) : (
-                <>
-                    <a 
-                    href="https://huggingface.co/settings/tokens" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 bg-stone-100 text-stone-800 px-4 py-3 rounded-xl font-bold text-sm hover:bg-stone-200 transition-colors border border-stone-300 w-full justify-center"
-                    >
-                    Get Access Token from Hugging Face
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                    </a>
-                    <div className="text-xs text-stone-500 pl-2 border-l-2 border-stone-200 space-y-1 mt-2">
-                    <p>1. Sign in to Hugging Face or Create an Account</p>
-                    <p>2. Go to Settings &gt; Access Tokens</p>
-                    <p>3. Create a new token (Read access is fine) and copy it</p>
-                    </div>
-                </>
-            )}
+            <a 
+                href={provider.keyLink} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-3 rounded-xl font-bold text-sm hover:bg-blue-100 transition-colors border border-blue-200 w-full justify-center"
+            >
+                Get Free Key from {provider.name}
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+            </a>
           </div>
 
           <div className="space-y-3">
@@ -103,7 +77,7 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onConfirm, a
               type="password" 
               value={manualKey}
               onChange={(e) => setManualKey(e.target.value)}
-              placeholder={`Paste your ${isGoogle ? 'API key (AIza...)' : 'HF token (hf_...)'} here`}
+              placeholder={`Paste your ${provider.keyPrefix || 'API key'} here`}
               className="w-full p-4 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm font-mono transition-all"
             />
           </div>

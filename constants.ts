@@ -1,23 +1,45 @@
 
 import type { SamplePromptsData, ModelMode } from './types';
 
-export const MODEL_MODES: Record<ModelMode, {
-    label: string;
-    imageModel: string;
-    textModel: string;
-    requiresPaidKey: boolean;
-}> = {
-  standard: {
-    label: 'Standard (Flash)',
-    imageModel: 'gemini-2.5-flash-image', // Flash Image
-    textModel: 'gemini-2.5-flash',
-    requiresPaidKey: true, // Now requires user key
+export const PROVIDERS = {
+  llm7: {
+    id: 'llm7',
+    name: 'LLM7.io / Community API',
+    description: 'Completely free community-operated endpoints. No API key or registration required to start! Ideal for quick testing.',
+    requiresKey: false,
+    keyLink: 'https://llm7.io',
+    keyPrefix: '',
+    setupTime: 'Instant / 0 seconds',
+    models: {
+      image: 'Free Community Image Generation (Wait times may apply)',
+      text: 'Free Community Text Generation'
+    }
   },
-  advanced: {
-    label: 'Advanced (Pro)',
-    imageModel: 'gemini-3-pro-image-preview', // Nano Banana 2
-    textModel: 'gemini-3-pro-preview', // Gemini 3
-    requiresPaidKey: true,
+  huggingface: {
+    id: 'huggingface',
+    name: 'Hugging Face (Meta, Stability AI)',
+    description: 'Top open source models. Requires a free account. No credit card ever needed.',
+    requiresKey: true,
+    keyLink: 'https://huggingface.co/settings/tokens',
+    keyPrefix: 'hf_...',
+    setupTime: '< 30 seconds',
+    models: {
+      image: 'stabilityai/stable-diffusion-3.5-large',
+      text: 'meta-llama/Llama-3.2-3B-Instruct'
+    }
+  },
+  google: {
+    id: 'google',
+    name: 'Google Gemini',
+    description: 'State of the art quality. Free options available but may require a linked billing account depending on your region.',
+    requiresKey: true,
+    keyLink: 'https://aistudio.google.com/app/apikey',
+    keyPrefix: 'AIza...',
+    setupTime: '< 30 seconds',
+    models: {
+      image: 'gemini-2.5-flash-image',
+      text: 'gemini-1.5-flash'
+    }
   }
 };
 

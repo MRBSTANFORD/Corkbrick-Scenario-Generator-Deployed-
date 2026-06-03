@@ -1,30 +1,18 @@
 
 import React from 'react';
-import { MODEL_MODES } from '../constants';
-import { ModelMode } from '../types';
+import { PROVIDERS } from '../constants';
+import { ProviderKey } from '../types';
 
 interface HeaderProps {
-  currentMode: ModelMode;
-  onModeChange: (mode: ModelMode) => void;
+  currentProvider: ProviderKey;
+  onProviderChange: (mode: ProviderKey) => void;
   hasKey: boolean;
   onManageKey: () => void;
   onClearKey: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ currentMode, onModeChange, hasKey, onManageKey, onClearKey }) => {
-  const currentConfig = MODEL_MODES[currentMode];
-
-  const getImageModelLabel = (model: string) => {
-    if (model === 'gemini-3-pro-image-preview') return 'Nano Banana 2';
-    if (model === 'gemini-2.5-flash-image') return 'Flash Image';
-    return model;
-  };
-
-  const getTextModelLabel = (model: string) => {
-    if (model === 'gemini-3-pro-preview') return 'Gemini 3';
-    if (model === 'gemini-2.5-flash') return 'Flash 2.5';
-    return model;
-  };
+export const Header: React.FC<HeaderProps> = ({ currentProvider, onProviderChange, hasKey, onManageKey, onClearKey }) => {
+  const isFree = currentProvider === 'llm7' || currentProvider === 'huggingface';
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-40">
@@ -45,24 +33,24 @@ export const Header: React.FC<HeaderProps> = ({ currentMode, onModeChange, hasKe
           <div className="flex items-center gap-3">
             <div className="flex items-center bg-stone-100 rounded-lg p-1 border border-stone-200">
                 <button
-                    onClick={() => onModeChange('standard')}
+                    onClick={() => onProviderChange('llm7')}
                     className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
-                    currentMode === 'standard'
-                        ? 'bg-white text-stone-800 shadow-sm'
-                        : 'text-stone-500 hover:text-stone-700'
-                    }`}
-                >
-                    Standard
-                </button>
-                <button
-                    onClick={() => onModeChange('advanced')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
-                    currentMode === 'advanced'
+                    currentProvider === 'llm7'
                         ? 'bg-amber-100 text-amber-800 shadow-sm border border-amber-200'
                         : 'text-stone-500 hover:text-stone-700'
                     }`}
                 >
-                    Advanced
+                    Free / 0-Setup
+                </button>
+                <button
+                    onClick={() => onProviderChange('google')}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
+                    currentProvider === 'google'
+                        ? 'bg-white text-stone-800 shadow-sm'
+                        : 'text-stone-500 hover:text-stone-700'
+                    }`}
+                >
+                    Gemini / High Quality
                 </button>
             </div>
 

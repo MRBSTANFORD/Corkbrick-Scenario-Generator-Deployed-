@@ -38,6 +38,20 @@ app.post('/api/gemini/edit-image', async (req, res) => {
   try {
     const { images, prompt, systemPrompt, modelName, aiProvider } = req.body;
     
+    if (aiProvider === 'llm7') {
+      try {
+        const hfPrompt = `${systemPrompt} | Scene to generate: ${prompt}`;
+        // Pollinations is a free community AI generation endpoint, satisfying the 0-hurdle constraints.
+        const imageRes = await fetch(`https://image.pollinations.ai/prompt/${encodeURIComponent(hfPrompt)}?width=768&height=768&nologo=true`);
+        if (!imageRes.ok) throw new Error("Free experimental image API is currently unavailable");
+        const arrayBuffer = await imageRes.arrayBuffer();
+        const base64Data = Buffer.from(arrayBuffer).toString('base64');
+        return res.json({ generatedImageBase64: `data:image/jpeg;base64,${base64Data}` });
+      } catch (err) {
+        throw new Error("Free experimental endpoint limits reached. Try another provider in the config panel.");
+      }
+    }
+
     if (aiProvider === 'huggingface') {
       const hfToken = req.headers.authorization?.split('Bearer ')[1];
       if (!hfToken) throw new Error("Hugging Face API token is required. Please check your key.");
@@ -97,6 +111,12 @@ app.post('/api/gemini/edit-image', async (req, res) => {
 app.post('/api/gemini/generate-description', async (req, res) => {
   try {
     const { editedImageBase64, mimeType, userPrompt, textModelName, aiProvider } = req.body;
+    if (aiProvider === 'llm7') {
+        const textRes = await fetch(`https://text.pollinations.ai/${encodeURIComponent("Write a very short description for an image generated with this prompt: " + userPrompt)}`);
+        if (!textRes.ok) throw new Error("Free experimental text generation is currently unavailable.");
+        const textData = await textRes.text();
+        return res.json({ description: textData || `(Free API generated description)` });
+    }
     if (aiProvider === 'huggingface') {
        return res.json({ description: `(Hugging Face) ${userPrompt}` });
     }
@@ -130,6 +150,19 @@ app.post('/api/gemini/generate-description', async (req, res) => {
 app.post('/api/gemini/generate-filename', async (req, res) => {
   try {
     const { description, textModelName, aiProvider } = req.body;
+    if (aiProvider === 'llm7') {
+        const textRes = await fetch(`https://text.pollinations.ai/${encodeURIComponent("Generate a 3 word maximum file-slug name, kebab-case, no extension, based on: " + description)}`);
+        const textData = await textRes.text();
+        
+        const filename = (textData || '')
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-');
+          
+        return res.json({ filename: filename || `corkbrick-scenario-${Date.now()}` });
+    }
     if (aiProvider === 'huggingface') {
        return res.json({ filename: `corkbrick-scenario-${Date.now()}` });
     }

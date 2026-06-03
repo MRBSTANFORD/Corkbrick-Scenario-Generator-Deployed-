@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
-import type { ImageFile, SavedScenario, ModelMode } from './types';
+import type { ImageFile, SavedScenario, ProviderKey } from './types';
 import { Header } from './components/Header';
 import ImageUploader from './components/ImageUploader';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -14,13 +14,14 @@ import VideoLoadingSpinner from './components/VideoLoadingSpinner';
 import VideoPlayer from './components/VideoPlayer';
 import ImageEditorModal from './components/ImageEditorModal';
 import { editImageWithPrompt, generateImageDescription, generateVideoFromImage, generateFilenameFromDescription } from './services/geminiService';
-import { SAMPLE_PROMPTS_STRUCTURED, DEFAULT_SYSTEM_PROMPT, MODEL_MODES } from './constants';
+import { SAMPLE_PROMPTS_STRUCTURED, DEFAULT_SYSTEM_PROMPT, PROVIDERS } from './constants';
 import SamplePrompts from './components/SamplePrompts';
 import InfoPanel from './components/InfoPanel';
 
 const LOCAL_STORAGE_KEY = 'corkbrick-saved-scenarios';
 const SESSION_API_KEY = 'corkbrick-user-api-key';
 
+// .. compressImageForStorage ..
 const compressImageForStorage = (dataUrl: string, maxSize = 800): Promise<string> => {
   return new Promise((resolve) => {
     const img = new Image();
@@ -56,15 +57,15 @@ const compressImageForStorage = (dataUrl: string, maxSize = 800): Promise<string
 };
 
 function App() {
-  const [modelMode, setModelMode] = useState<ModelMode>('standard');
   const [originalImages, setOriginalImages] = useState<ImageFile[]>([]);
   const [editedImage, setEditedImage] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
   const [generatedFilename, setGeneratedFilename] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<string>('');
   const [systemPrompt, setSystemPrompt] = useState<string>(DEFAULT_SYSTEM_PROMPT);
-  const [aiProvider, setAiProvider] = useState<'google' | 'huggingface'>('google');
+  const [aiProvider, setAiProvider] = useState<ProviderKey>('llm7');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
   const [error, setError] = useState<string | null>(null);
   
   // Video generation state
@@ -183,11 +184,11 @@ function App() {
       return;
     }
 
-    const currentConfig = MODEL_MODES[modelMode];
+    const currentConfig = Object.values(PROVIDERS).find((p) => p.id === aiProvider) || PROVIDERS.google;
     const activeKey = forceUseKey || userApiKey;
 
     // STRICT CHECK: If no manual key, stop and ask.
-    if (!activeKey) {
+    if (aiProvider !== 'llm7' && !activeKey) {
         setPendingAction('image');
         setIsApiKeyModalOpen(true);
         return;
@@ -206,7 +207,7 @@ function App() {
           originalImages, 
           prompt, 
           systemPrompt,
-          currentConfig.imageModel,
+          currentConfig.models.image,
           activeKey,
           aiProvider
       );
@@ -218,7 +219,7 @@ function App() {
             editedImageResult, 
             mimeType, 
             prompt,
-            currentConfig.textModel,
+            currentConfig.models.text,
             activeKey,
             aiProvider
         );
@@ -226,7 +227,7 @@ function App() {
 
         if (descriptionResult) {
             try {
-                const filenameResult = await generateFilenameFromDescription(descriptionResult, currentConfig.textModel, activeKey, aiProvider);
+                const filenameResult = await generateFilenameFromDescription(descriptionResult, currentConfig.models.text, activeKey, aiProvider);
                 setGeneratedFilename(filenameResult);
             } catch (fileNameError) {
                 console.warn("Could not generate filename:", fileNameError);
@@ -250,7 +251,7 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [originalImages, prompt, systemPrompt, modelMode, userApiKey, aiProvider]);
+  }, [originalImages, prompt, systemPrompt, userApiKey, aiProvider]);
 
   const handleGenerateVideo = useCallback(async (forceUseKey?: string) => {
     if (!editedImage) {
@@ -429,8 +430,8 @@ function App() {
     <>
       <div className="min-h-screen bg-stone-100 font-sans text-stone-800">
         <Header 
-            currentMode={modelMode} 
-            onModeChange={setModelMode} 
+            currentProvider={aiProvider} 
+            onProviderChange={setAiProvider} 
             hasKey={!!userApiKey}
             onManageKey={() => setIsApiKeyModalOpen(true)}
             onClearKey={handleClearKey}
@@ -571,7 +572,7 @@ function App() {
                     systemPrompt={systemPrompt} 
                     setSystemPrompt={setSystemPrompt} 
                     isLoading={isLoading} 
-                    currentModelName={MODEL_MODES[modelMode].imageModel}
+                    currentModelName={Object.values(PROVIDERS).find((p) => p.id === aiProvider)?.models.image || ''}
                     aiProvider={aiProvider}
                     setAiProvider={setAiProvider}
                 />
